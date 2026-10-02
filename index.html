@@ -1,0 +1,1629 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="author" content="Meniar Trabelsi" />
+  <meta name="description" content="PET cremator fleet sizing and five-phase investment planning tool." />
+  <title>PET Sizing Tool · Fleet Optimisation</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23152f46'/%3E%3Cpath d='M18 44h28M22 38h20l-3-17H25z' fill='none' stroke='%23f6b73c' stroke-width='5' stroke-linejoin='round'/%3E%3Cpath d='M30 14c4 5 5 8 2 12 6-2 9-7 6-13' fill='none' stroke='white' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <style>
+:root {
+  --navy-950: #0e2435;
+  --navy-900: #152f46;
+  --navy-800: #1e425e;
+  --blue-700: #286a9f;
+  --blue-500: #4d91c6;
+  --ink: #17222c;
+  --muted: #617180;
+  --line: #d8e1e8;
+  --line-strong: #b8c7d2;
+  --canvas: #f2f6f8;
+  --panel: #ffffff;
+  --amber: #e5a62d;
+  --amber-soft: #fff7e4;
+  --green: #247a58;
+  --green-soft: #e8f4ee;
+  --red: #b64747;
+  --red-soft: #fdecec;
+  --grey-cell: #edf1f4;
+  --shadow: 0 12px 32px rgba(21, 47, 70, 0.08);
+  --ft110: #244f75;
+  --ft150: #4689bd;
+  --ft125: #2f8a73;
+  --ft70: #e5a62d;
+  --ft40: #8998a5;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--canvas);
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; background: var(--canvas); }
+body { margin: 0; min-width: 320px; background: var(--canvas); }
+button, input, select { font: inherit; }
+button, select { cursor: pointer; }
+.app-shell { min-height: 100vh; }
+
+.topbar {
+  min-height: 72px;
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: #fff;
+  background: linear-gradient(105deg, var(--navy-950), var(--navy-900) 64%, #1f4a67);
+  box-shadow: 0 4px 20px rgba(10, 30, 44, 0.23);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: 11px;
+  color: #f5b941;
+  font-weight: 850;
+  letter-spacing: -0.04em;
+  background: rgba(255,255,255,.03);
+}
+.brand strong { display: block; font-size: 1.04rem; letter-spacing: .01em; }
+.brand span { display: block; margin-top: 2px; color: #c6d5e0; font-size: .8rem; }
+.header-actions { display: flex; align-items: center; gap: 9px; }
+
+.button {
+  border-radius: 8px;
+  padding: 9px 13px;
+  min-height: 39px;
+  border: 1px solid transparent;
+  font-size: .86rem;
+  font-weight: 750;
+}
+.button-secondary { background: #fff; color: var(--navy-900); }
+.button-outline { background: transparent; border-color: rgba(255,255,255,.38); color: #fff; }
+.button:hover { filter: brightness(.97); }
+.button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+  outline: 3px solid rgba(77,145,198,.34);
+  outline-offset: 2px;
+}
+
+main { max-width: 1540px; margin: 0 auto; padding: 22px 24px 46px; }
+.method-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 12px 15px;
+  border: 1px solid #e7c97c;
+  border-radius: 10px;
+  background: var(--amber-soft);
+  color: #685018;
+  font-size: .9rem;
+  line-height: 1.45;
+}
+.method-mark { width: 9px; height: 9px; margin-top: 5px; flex: 0 0 auto; border-radius: 50%; background: var(--amber); }
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(720px, 1.58fr) minmax(350px, .72fr);
+  gap: 18px;
+  align-items: start;
+}
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #fff, #fafcfd);
+}
+.panel-heading h1, .panel-heading h2, .panel-heading h3 { margin: 0; color: var(--navy-950); }
+.panel-heading h1 { font-size: 1.2rem; }
+.panel-heading h2 { font-size: 1.08rem; }
+.panel-heading p:not(.eyebrow) { margin: 5px 0 0; color: var(--muted); font-size: .86rem; line-height: 1.4; }
+.compact-heading { padding-top: 15px; padding-bottom: 15px; }
+.eyebrow {
+  margin: 0 0 5px;
+  color: var(--blue-700);
+  font-size: .72rem;
+  line-height: 1;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.view-control { width: 160px; flex: 0 0 auto; }
+.view-control label { display: block; margin-bottom: 6px; color: var(--muted); font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+select {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 34px 8px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-weight: 750;
+}
+
+.input-scroll, .results-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: separate; border-spacing: 0; }
+th, td { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:last-child, td:last-child { border-right: 0; }
+tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+.input-table th, .input-table td { padding: 9px 10px; }
+.input-table thead th {
+  background: var(--navy-900);
+  color: #fff;
+  text-align: center;
+  font-size: .78rem;
+  letter-spacing: .01em;
+}
+.input-table thead th:first-child { min-width: 205px; text-align: left; }
+.input-table thead th:last-child { min-width: 110px; }
+.input-table tbody th {
+  background: #f8fafb;
+  color: #334654;
+  text-align: left;
+  font-size: .84rem;
+  font-weight: 750;
+}
+.input-table td { text-align: right; font-size: .84rem; }
+.field-label { display: inline-flex; align-items: center; gap: 6px; }
+.help-dot {
+  width: 18px;
+  height: 18px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #9cb0be;
+  border-radius: 50%;
+  color: #526b7d;
+  font-size: .68rem;
+  font-weight: 850;
+  cursor: help;
+}
+.input-table input {
+  width: 86px;
+  padding: 7px 8px;
+  border: 1px solid #dfbd62;
+  border-radius: 7px;
+  background: #fff8e6;
+  color: var(--ink);
+  text-align: right;
+  font-weight: 750;
+}
+.calculated-cell { background: var(--grey-cell); color: #354653; font-weight: 750; }
+.unit-cell { color: var(--muted); font-size: .78rem; }
+.ft125-only { color: #5a594d; }
+
+.recommendation-panel { min-height: 500px; }
+.recommendation-heading { padding: 19px 19px 15px; border-bottom: 1px solid var(--line); }
+.recommendation-heading h2 { margin: 0; color: var(--navy-950); font-size: 1.2rem; }
+.recommendation-heading p { margin: 5px 0 0; color: var(--muted); font-size: .84rem; line-height: 1.45; }
+.kpi-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 15px 15px 0; }
+.kpi {
+  min-height: 108px;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fbfcfd;
+}
+.kpi.good { background: var(--green-soft); border-color: #b7ddca; }
+.kpi.accent { background: #edf5fb; border-color: #bed7e8; }
+.kpi .label { color: var(--muted); font-size: .69rem; font-weight: 850; letter-spacing: .055em; text-transform: uppercase; }
+.kpi .value { margin-top: 9px; color: var(--navy-900); font-size: 1.3rem; font-weight: 850; line-height: 1.12; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.kpi.good .value { color: var(--green); }
+.kpi .note { margin-top: 5px; color: var(--muted); font-size: .75rem; line-height: 1.35; }
+.decision-callout {
+  margin: 14px 15px 0;
+  padding: 13px 14px;
+  border-left: 4px solid var(--amber);
+  border-radius: 7px;
+  background: var(--amber-soft);
+  color: #5f4918;
+  font-size: .88rem;
+  line-height: 1.48;
+}
+.decision-callout strong { color: #3f3212; }
+.optional-note {
+  margin: 12px 15px 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fafcfd;
+  color: #354857;
+  font-size: .84rem;
+}
+.optional-note summary { padding: 11px 13px; cursor: pointer; font-weight: 750; }
+.optional-note div { padding: 0 13px 12px; color: var(--muted); line-height: 1.45; }
+
+.plan-panel { margin-top: 18px; }
+.summary-pill {
+  max-width: 360px;
+  padding: 8px 11px;
+  border: 1px solid #c6d5df;
+  border-radius: 999px;
+  background: #f4f8fa;
+  color: #385164;
+  font-size: .78rem;
+  font-weight: 800;
+  text-align: center;
+}
+.phase-cards {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(170px, 1fr));
+  gap: 10px;
+  padding: 16px 18px 0;
+  overflow-x: auto;
+}
+.phase-card {
+  min-width: 170px;
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-top: 4px solid var(--blue-500);
+  border-radius: 10px;
+  background: #f9fbfc;
+  text-align: left;
+}
+.phase-card:hover { border-color: #a9c0cf; }
+.phase-card.active { border-top-color: var(--amber); background: var(--amber-soft); }
+.phase-card strong { display: block; color: var(--navy-900); font-size: .9rem; }
+.phase-card span { display: block; margin-top: 4px; color: var(--muted); font-size: .78rem; line-height: 1.35; }
+.phase-card .purchase { color: var(--ink); font-weight: 750; }
+
+.visual-grid { display: grid; grid-template-columns: minmax(680px, 1.55fr) minmax(280px, .45fr); gap: 16px; padding: 16px 18px; }
+.chart-card, .rationale-card { border: 1px solid var(--line); border-radius: 11px; background: #fff; }
+.chart-card { padding: 14px 15px 10px; overflow-x: auto; }
+.chart-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; min-width: 720px; }
+.chart-heading h3, .rationale-card h3 { margin: 0; color: var(--navy-900); font-size: .96rem; }
+.chart-heading p { margin: 4px 0 0; color: var(--muted); font-size: .78rem; }
+.legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 12px; max-width: 440px; }
+.legend-item { display: inline-flex; align-items: center; gap: 5px; color: var(--muted); font-size: .74rem; font-weight: 700; }
+.legend-swatch { width: 10px; height: 10px; border-radius: 2px; }
+#fleetChart { display: block; width: 100%; min-width: 720px; height: 330px; margin-top: 4px; }
+.chart-grid { stroke: #dfe6eb; stroke-width: 1; }
+.chart-axis { fill: #6a7a87; font-size: 12px; }
+.chart-value { fill: #435664; font-size: 12px; font-weight: 750; }
+.util-line { fill: none; stroke: #ad4646; stroke-width: 3.2; }
+.util-point { fill: #fff; stroke: #ad4646; stroke-width: 3; }
+.rationale-card { padding: 17px; background: linear-gradient(180deg, #f8fbfd, #fff); }
+.rationale-card h3 { margin-top: 5px; font-size: 1.05rem; }
+.rationale-card p:not(.eyebrow) { color: var(--muted); font-size: .86rem; line-height: 1.52; }
+.rationale-card ul { margin: 10px 0 0; padding-left: 18px; color: #334857; font-size: .84rem; line-height: 1.55; }
+
+.results-scroll { border-top: 1px solid var(--line); }
+.results-table th, .results-table td { padding: 11px 10px; text-align: right; font-size: .8rem; vertical-align: top; }
+.results-table thead th { background: var(--navy-900); color: #fff; font-size: .75rem; text-align: center; }
+.results-table th:first-child, .results-table td:first-child { text-align: left; }
+.results-table tbody tr.focus-row { background: #fff8e7; }
+.results-table .text-cell { text-align: left; white-space: normal; min-width: 145px; line-height: 1.38; }
+.results-table .allocation-cell { min-width: 230px; }
+.status-badge {
+  display: inline-block;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: .72rem;
+  font-weight: 850;
+}
+.status-badge.buy { background: var(--red-soft); color: var(--red); }
+
+.lower-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 18px; margin-top: 18px; }
+.alternative-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 15px; }
+.alternative-card { padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: #fafcfd; }
+.alternative-card strong { display: block; color: var(--navy-900); font-size: .94rem; }
+.alternative-card span { display: block; margin-top: 5px; color: var(--muted); font-size: .78rem; line-height: 1.38; }
+.empty-alternatives { padding: 20px; color: var(--muted); font-size: .86rem; }
+.rules-list { padding: 7px 18px 16px; }
+.rules-list div { padding: 10px 0; border-bottom: 1px solid #e7edf1; color: #40515e; font-size: .84rem; line-height: 1.45; }
+.rules-list div:last-child { border-bottom: 0; }
+
+.error-state { margin: 15px; padding: 18px; border: 1px solid #efbcbc; border-radius: 10px; background: var(--red-soft); color: var(--red); }
+.error-state strong, .error-state span { display: block; }
+.error-state span { margin-top: 6px; }
+footer { padding: 24px 0 0; color: #738390; font-size: .76rem; text-align: center; }
+
+@media (max-width: 1180px) {
+  .workspace, .visual-grid, .lower-grid { grid-template-columns: 1fr; }
+  .recommendation-panel { min-height: 0; }
+  .visual-grid { padding-top: 10px; }
+  .rationale-card { min-height: 0; }
+}
+
+@media (max-width: 760px) {
+  .topbar { align-items: flex-start; padding: 12px 16px; }
+  .header-actions { flex-direction: column; align-items: stretch; }
+  .button { padding: 8px 10px; min-height: 35px; font-size: .78rem; }
+  main { padding: 16px 12px 36px; }
+  .panel-heading { align-items: flex-start; flex-direction: column; }
+  .view-control { width: 100%; }
+  .kpi-grid { grid-template-columns: 1fr; }
+  .phase-cards { grid-template-columns: repeat(5, 180px); }
+  .alternative-list { grid-template-columns: 1fr; }
+  .summary-pill { max-width: 100%; }
+}
+
+@media print {
+  .topbar { position: static; }
+  .header-actions, .method-strip, .optional-note { display: none; }
+  body, :root { background: #fff; }
+  .panel { box-shadow: none; break-inside: avoid; }
+  main { max-width: none; padding: 12px; }
+}
+
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="PET Sizing Tool">
+        <div class="brand-mark" aria-hidden="true">FT</div>
+        <div>
+          <strong>PET Sizing Tool</strong>
+          <span>Fleet planning · V2</span>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="button button-secondary" id="downloadCsv" type="button">Download plan</button>
+        <button class="button button-outline" id="resetInputs" type="button">Reset inputs</button>
+      </div>
+    </header>
+
+    <main>
+      <div class="method-strip" role="note">
+        <span class="method-mark" aria-hidden="true"></span>
+        <div>
+          <strong>Recommendation basis:</strong>
+          minimum final unit count across all five phases. CAPEX, OPEX and TCO are not included at this stage.
+        </div>
+      </div>
+
+      <section class="workspace" aria-label="Business plan and recommendation">
+        <article class="panel input-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Client need</p>
+              <h1>Business plan inputs</h1>
+              <p>Edit the amber cells. Grey cells are calculated automatically.</p>
+            </div>
+            <div class="view-control">
+              <label for="focusPhase">View</label>
+              <select id="focusPhase" aria-label="Select global plan or one phase">
+                <option value="global">Global plan</option>
+                <option value="0">Phase 1</option>
+                <option value="1">Phase 2</option>
+                <option value="2">Phase 3</option>
+                <option value="3">Phase 4</option>
+                <option value="4">Phase 5</option>
+              </select>
+            </div>
+          </div>
+          <div class="input-scroll">
+            <table class="input-table" aria-label="Five-phase business plan inputs">
+              <thead>
+                <tr>
+                  <th scope="col">Input</th>
+                  <th scope="col">Phase 1</th>
+                  <th scope="col">Phase 2</th>
+                  <th scope="col">Phase 3</th>
+                  <th scope="col">Phase 4</th>
+                  <th scope="col">Phase 5</th>
+                  <th scope="col">Unit</th>
+                </tr>
+              </thead>
+              <tbody id="inputRows"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <aside class="panel recommendation-panel" aria-live="polite">
+          <div class="recommendation-heading" id="recommendationHeading"></div>
+          <div class="kpi-grid" id="recommendationKpis"></div>
+          <div class="decision-callout" id="decisionCallout"></div>
+          <details class="optional-note" id="operatingNote">
+            <summary>Optional operating-hours alternative</summary>
+            <div id="operatingNoteBody"></div>
+          </details>
+        </aside>
+      </section>
+
+      <section class="panel plan-panel" aria-label="Recommended five-phase plan">
+        <div class="panel-heading compact-heading">
+          <div>
+            <p class="eyebrow">Recommended plan</p>
+            <h2>Fleet and investment timeline</h2>
+            <p id="planSummary"></p>
+          </div>
+          <div class="summary-pill" id="horizonSummary"></div>
+        </div>
+
+        <div class="phase-cards" id="phaseCards" aria-label="Phase purchase timeline"></div>
+
+        <div class="visual-grid">
+          <div class="chart-card">
+            <div class="chart-heading">
+              <div>
+                <h3>Installed fleet and utilisation</h3>
+                <p>Bars show installed units; the line shows utilisation of that installed fleet.</p>
+              </div>
+              <div class="legend" id="chartLegend"></div>
+            </div>
+            <svg id="fleetChart" viewBox="0 0 1100 340" role="img" aria-label="Installed fleet and utilisation across five phases"></svg>
+          </div>
+
+          <aside class="rationale-card">
+            <p class="eyebrow">Why this plan</p>
+            <h3 id="rationaleTitle"></h3>
+            <div id="rationaleBody"></div>
+          </aside>
+        </div>
+
+        <div class="results-scroll">
+          <table class="results-table" aria-label="Detailed recommended plan by phase">
+            <thead>
+              <tr>
+                <th scope="col">Phase</th>
+                <th scope="col">Period</th>
+                <th scope="col">Individual/year</th>
+                <th scope="col">Collective/year</th>
+                <th scope="col">Installed fleet</th>
+                <th scope="col">Purchase</th>
+                <th scope="col">Operating allocation</th>
+                <th scope="col">Utilisation</th>
+                <th scope="col">Optional h/day</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="lower-grid">
+        <article class="panel alternatives-panel">
+          <div class="panel-heading compact-heading">
+            <div>
+              <p class="eyebrow">Same-unit alternatives</p>
+              <h2>Other feasible final fleets</h2>
+              <p>Shown when another fleet reaches the same minimum unit count.</p>
+            </div>
+          </div>
+          <div class="alternative-list" id="alternativeList"></div>
+        </article>
+
+        <article class="panel rules-panel">
+          <div class="panel-heading compact-heading">
+            <div>
+              <p class="eyebrow">Calculation rules</p>
+              <h2>Validated technical logic</h2>
+            </div>
+          </div>
+          <div class="rules-list">
+            <div><strong>FT110:</strong> 45 kg/h collective capacity plus 3 parallel pets/h.</div>
+            <div><strong>FT150:</strong> 80 kg/h collective capacity plus 1 parallel pet/h.</div>
+            <div><strong>FT125:</strong> individual use is limited to the client-defined very-large-pet share.</div>
+            <div><strong>Fleet continuity:</strong> installed machines remain available in every later phase.</div>
+          </div>
+        </article>
+      </section>
+
+      <footer>Prepared by Meniar Trabelsi · PET Sizing Tool V2</footer>
+    </main>
+  </div>
+
+  <template id="errorTemplate">
+    <div class="error-state">
+      <strong>No feasible recommendation</strong>
+      <span>Please review the operating assumptions or reduce the demand.</span>
+    </div>
+  </template>
+
+  <script>
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === "object" && module.exports) module.exports = api;
+  if (root) root.PETOptimizer = api;
+})(typeof window !== "undefined" ? window : globalThis, function () {
+  "use strict";
+
+  const MACHINE_ORDER = ["FT110", "FT150", "FT125", "FT70", "FT40"];
+
+  const MACHINE_DATA = Object.freeze({
+    FT110: Object.freeze({
+      code: "FT110",
+      individualRate: 4,
+      sharedIndividualRate: 6,
+      collectiveKgPerHour: 45,
+      parallelIndividualPerHour: 3,
+      note: "One cell is used for collective cremation; three cells remain available at one pet per hour."
+    }),
+    FT150: Object.freeze({
+      code: "FT150",
+      individualRate: 3,
+      sharedIndividualRate: 4.5,
+      collectiveKgPerHour: 80,
+      parallelIndividualPerHour: 1,
+      note: "Two cells provide the 80 kg/h collective capacity; one cell remains available at one pet per hour."
+    }),
+    FT125: Object.freeze({
+      code: "FT125",
+      individualRate: 1,
+      sharedIndividualRate: 2,
+      collectiveKgPerHour: 100,
+      parallelIndividualPerHour: 0,
+      largePetsOnly: true,
+      note: "Individual operation is reserved for the client-defined share of very large pets."
+    }),
+    FT70: Object.freeze({
+      code: "FT70",
+      individualRate: 2.5,
+      sharedIndividualRate: 3.5,
+      collectiveKgPerHour: 65,
+      parallelIndividualPerHour: 0,
+      note: "Standard individual and collective operating modes."
+    }),
+    FT40: Object.freeze({
+      code: "FT40",
+      individualRate: 1,
+      sharedIndividualRate: 2,
+      collectiveKgPerHour: 40,
+      parallelIndividualPerHour: 0,
+      note: "Standard individual and collective operating modes."
+    })
+  });
+
+  const DEFAULT_PHASES = Object.freeze([
+    Object.freeze({ duration: 1, volume: 3000, individualShare: 50, hours: 8, days: 300, availability: 95, weight: 15, largeShare: 1 }),
+    Object.freeze({ duration: 1, volume: 4000, individualShare: 50, hours: 8, days: 300, availability: 95, weight: 15, largeShare: 1 }),
+    Object.freeze({ duration: 1, volume: 5000, individualShare: 65, hours: 8, days: 300, availability: 95, weight: 15, largeShare: 1 }),
+    Object.freeze({ duration: 1, volume: 6000, individualShare: 65, hours: 8, days: 300, availability: 95, weight: 15, largeShare: 1 }),
+    Object.freeze({ duration: 1, volume: 7000, individualShare: 65, hours: 8, days: 300, availability: 95, weight: 15, largeShare: 1 })
+  ]);
+
+  const EPSILON = 1e-7;
+
+  function clamp(value, min, max) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return min;
+    return Math.min(max, Math.max(min, number));
+  }
+
+  function normalisePhase(phase) {
+    return {
+      duration: clamp(phase.duration, 1, 50),
+      volume: clamp(phase.volume, 0, 1000000),
+      individualShare: clamp(phase.individualShare, 0, 100),
+      hours: clamp(phase.hours, 0.1, 24),
+      days: clamp(phase.days, 1, 366),
+      availability: clamp(phase.availability, 1, 100),
+      weight: clamp(phase.weight, 0.1, 500),
+      largeShare: clamp(phase.largeShare, 0, 100)
+    };
+  }
+
+  function phaseMetrics(rawPhase) {
+    const phase = normalisePhase(rawPhase);
+    const individualDemand = phase.volume * phase.individualShare / 100;
+    const collectiveDemand = phase.volume - individualDemand;
+    return {
+      ...phase,
+      individualDemand,
+      collectiveDemand,
+      effectiveHours: phase.hours * phase.days * phase.availability / 100,
+      largePetDemand: individualDemand * phase.largeShare / 100
+    };
+  }
+
+  function emptyCounts() {
+    return Object.fromEntries(MACHINE_ORDER.map((code) => [code, 0]));
+  }
+
+  function normaliseCounts(input) {
+    const counts = emptyCounts();
+    MACHINE_ORDER.forEach((code) => {
+      counts[code] = Math.max(0, Math.floor(Number(input && input[code]) || 0));
+    });
+    return counts;
+  }
+
+  function totalUnits(counts) {
+    return MACHINE_ORDER.reduce((sum, code) => sum + (counts[code] || 0), 0);
+  }
+
+  function modelCount(counts) {
+    return MACHINE_ORDER.reduce((sum, code) => sum + ((counts[code] || 0) > 0 ? 1 : 0), 0);
+  }
+
+  function signature(counts) {
+    return MACHINE_ORDER.map((code) => counts[code] || 0).join("-");
+  }
+
+  function machineRates(code, metrics) {
+    const machine = MACHINE_DATA[code];
+    return {
+      individualRate: machine.individualRate,
+      collectiveRate: machine.collectiveKgPerHour / metrics.weight + machine.parallelIndividualPerHour
+    };
+  }
+
+  function allocateFleet(rawCounts, rawPhase) {
+    const counts = normaliseCounts(rawCounts);
+    const metrics = phaseMetrics(rawPhase);
+    const units = totalUnits(counts);
+    const allocations = Object.fromEntries(MACHINE_ORDER.map((code) => [code, { individual: 0, collective: 0 }]));
+
+    if (metrics.volume <= EPSILON) {
+      return {
+        feasible: true,
+        counts,
+        metrics,
+        allocations,
+        usedEquivalentUnits: 0,
+        utilization: 0,
+        spareCapacity: units > 0 ? 1 : 0,
+        individualCapacity: 0,
+        collectiveCapacity: 0
+      };
+    }
+
+    if (units === 0 || metrics.effectiveHours <= EPSILON) {
+      return { feasible: false, counts, metrics, allocations, reason: "No available machine capacity." };
+    }
+
+    const models = MACHINE_ORDER
+      .filter((code) => counts[code] > 0)
+      .map((code) => {
+        const rates = machineRates(code, metrics);
+        let maxIndividualUnits = counts[code];
+        if (MACHINE_DATA[code].largePetsOnly) {
+          const capacityPerUnit = rates.individualRate * metrics.effectiveHours;
+          maxIndividualUnits = capacityPerUnit > EPSILON
+            ? Math.min(counts[code], metrics.largePetDemand / capacityPerUnit)
+            : 0;
+        }
+        return {
+          code,
+          count: counts[code],
+          individualRate: rates.individualRate,
+          collectiveRate: rates.collectiveRate,
+          maxIndividualUnits,
+          efficiency: rates.collectiveRate > EPSILON ? rates.individualRate / rates.collectiveRate : Number.POSITIVE_INFINITY
+        };
+      });
+
+    let remainingIndividual = metrics.individualDemand;
+    const individualOrder = [...models].sort((a, b) => {
+      if (Math.abs(b.efficiency - a.efficiency) > EPSILON) return b.efficiency - a.efficiency;
+      return MACHINE_ORDER.indexOf(a.code) - MACHINE_ORDER.indexOf(b.code);
+    });
+
+    for (const model of individualOrder) {
+      if (remainingIndividual <= EPSILON) break;
+      const perEquivalentUnit = model.individualRate * metrics.effectiveHours;
+      if (perEquivalentUnit <= EPSILON || model.maxIndividualUnits <= EPSILON) continue;
+      const neededUnits = remainingIndividual / perEquivalentUnit;
+      const allocatedUnits = Math.min(model.maxIndividualUnits, neededUnits);
+      allocations[model.code].individual = allocatedUnits;
+      remainingIndividual -= allocatedUnits * perEquivalentUnit;
+    }
+
+    if (remainingIndividual > 1e-5) {
+      return {
+        feasible: false,
+        counts,
+        metrics,
+        allocations,
+        reason: "Insufficient individual capacity.",
+        individualShortfall: remainingIndividual
+      };
+    }
+
+    let remainingCollective = metrics.collectiveDemand;
+    const collectiveOrder = [...models].sort((a, b) => {
+      if (Math.abs(b.collectiveRate - a.collectiveRate) > EPSILON) return b.collectiveRate - a.collectiveRate;
+      return MACHINE_ORDER.indexOf(a.code) - MACHINE_ORDER.indexOf(b.code);
+    });
+
+    for (const model of collectiveOrder) {
+      if (remainingCollective <= EPSILON) break;
+      const remainingMachineUnits = model.count - allocations[model.code].individual;
+      const perEquivalentUnit = model.collectiveRate * metrics.effectiveHours;
+      if (remainingMachineUnits <= EPSILON || perEquivalentUnit <= EPSILON) continue;
+      const neededUnits = remainingCollective / perEquivalentUnit;
+      const allocatedUnits = Math.min(remainingMachineUnits, neededUnits);
+      allocations[model.code].collective = allocatedUnits;
+      remainingCollective -= allocatedUnits * perEquivalentUnit;
+    }
+
+    if (remainingCollective > 1e-5) {
+      return {
+        feasible: false,
+        counts,
+        metrics,
+        allocations,
+        reason: "Insufficient collective capacity.",
+        collectiveShortfall: remainingCollective
+      };
+    }
+
+    let usedEquivalentUnits = 0;
+    let individualCapacity = 0;
+    let collectiveCapacity = 0;
+    models.forEach((model) => {
+      const individualUnits = allocations[model.code].individual;
+      const collectiveUnits = allocations[model.code].collective;
+      usedEquivalentUnits += individualUnits + collectiveUnits;
+      individualCapacity += individualUnits * model.individualRate * metrics.effectiveHours;
+      collectiveCapacity += collectiveUnits * model.collectiveRate * metrics.effectiveHours;
+    });
+
+    const utilization = units > 0 ? usedEquivalentUnits / units : 0;
+    return {
+      feasible: true,
+      counts,
+      metrics,
+      allocations,
+      usedEquivalentUnits,
+      utilization,
+      spareCapacity: Math.max(0, 1 - utilization),
+      individualCapacity,
+      collectiveCapacity
+    };
+  }
+
+  function generateCompositions(total, dimensions) {
+    const output = [];
+    const current = new Array(dimensions).fill(0);
+    function walk(index, remaining) {
+      if (index === dimensions - 1) {
+        current[index] = remaining;
+        output.push([...current]);
+        return;
+      }
+      for (let value = 0; value <= remaining; value += 1) {
+        current[index] = value;
+        walk(index + 1, remaining - value);
+      }
+    }
+    walk(0, total);
+    return output;
+  }
+
+  function arrayToCounts(values) {
+    return Object.fromEntries(MACHINE_ORDER.map((code, index) => [code, values[index] || 0]));
+  }
+
+  function countsToArray(counts) {
+    return MACHINE_ORDER.map((code) => counts[code] || 0);
+  }
+
+  function isSubset(previous, next) {
+    return MACHINE_ORDER.every((code) => (previous[code] || 0) <= (next[code] || 0));
+  }
+
+  function generateSubfleets(finalCounts) {
+    const limits = countsToArray(finalCounts);
+    const output = [];
+    const current = new Array(limits.length).fill(0);
+    function walk(index) {
+      if (index === limits.length) {
+        output.push(arrayToCounts(current));
+        return;
+      }
+      for (let value = 0; value <= limits[index]; value += 1) {
+        current[index] = value;
+        walk(index + 1);
+      }
+    }
+    walk(0);
+    return output;
+  }
+
+  function pathForFinalFleet(finalCounts, phases) {
+    const subfleets = generateSubfleets(finalCounts);
+    const feasibleByPhase = phases.map((phase, index) => {
+      const fleets = subfleets.filter((counts) => {
+        if (index === phases.length - 1 && signature(counts) !== signature(finalCounts)) return false;
+        return allocateFleet(counts, phase).feasible;
+      });
+      return fleets;
+    });
+
+    if (feasibleByPhase.some((fleets) => fleets.length === 0)) return null;
+
+    let states = feasibleByPhase[0].map((counts) => ({
+      counts,
+      path: [counts],
+      machineYears: totalUnits(counts) * normalisePhase(phases[0]).duration,
+      purchaseEvents: totalUnits(counts) > 0 ? 1 : 0
+    }));
+
+    for (let phaseIndex = 1; phaseIndex < phases.length; phaseIndex += 1) {
+      const duration = normalisePhase(phases[phaseIndex]).duration;
+      const nextStates = [];
+      for (const counts of feasibleByPhase[phaseIndex]) {
+        let best = null;
+        for (const previous of states) {
+          if (!isSubset(previous.counts, counts)) continue;
+          const changed = signature(previous.counts) !== signature(counts);
+          const candidate = {
+            counts,
+            path: [...previous.path, counts],
+            machineYears: previous.machineYears + totalUnits(counts) * duration,
+            purchaseEvents: previous.purchaseEvents + (changed ? 1 : 0)
+          };
+          if (!best || candidate.machineYears < best.machineYears - EPSILON ||
+            (Math.abs(candidate.machineYears - best.machineYears) <= EPSILON && candidate.purchaseEvents < best.purchaseEvents)) {
+            best = candidate;
+          }
+        }
+        if (best) nextStates.push(best);
+      }
+      states = nextStates;
+      if (states.length === 0) return null;
+    }
+
+    states.sort((a, b) => a.machineYears - b.machineYears || a.purchaseEvents - b.purchaseEvents);
+    return states[0] || null;
+  }
+
+  function comparePlans(a, b) {
+    if (a.finalUnits !== b.finalUnits) return a.finalUnits - b.finalUnits;
+    if (Math.abs(a.machineYears - b.machineYears) > EPSILON) return a.machineYears - b.machineYears;
+    if (a.distinctModels !== b.distinctModels) return a.distinctModels - b.distinctModels;
+    if (Math.abs(a.averageUtilization - b.averageUtilization) > EPSILON) return a.averageUtilization - b.averageUtilization;
+    return a.signature.localeCompare(b.signature);
+  }
+
+  function purchasesBetween(previous, current) {
+    const purchases = emptyCounts();
+    MACHINE_ORDER.forEach((code) => {
+      purchases[code] = Math.max(0, (current[code] || 0) - (previous[code] || 0));
+    });
+    return purchases;
+  }
+
+  function earliestYearByPhase(phases) {
+    let year = 1;
+    return phases.map((phase) => {
+      const start = year;
+      year += normalisePhase(phase).duration;
+      return start;
+    });
+  }
+
+  function minimumHoursForFleet(counts, phase, ceiling) {
+    if (totalUnits(counts) === 0) return null;
+    const maxHours = ceiling || 24;
+    const highPhase = { ...phase, hours: maxHours };
+    if (!allocateFleet(counts, highPhase).feasible) return null;
+    let low = 0.05;
+    let high = maxHours;
+    for (let i = 0; i < 45; i += 1) {
+      const mid = (low + high) / 2;
+      if (allocateFleet(counts, { ...phase, hours: mid }).feasible) high = mid;
+      else low = mid;
+    }
+    return high;
+  }
+
+  function enrichPlan(plan, phases) {
+    const years = earliestYearByPhase(phases);
+    const phasePlans = plan.path.map((counts, index) => {
+      const previous = index === 0 ? emptyCounts() : plan.path[index - 1];
+      const purchases = purchasesBetween(previous, counts);
+      const allocation = allocateFleet(counts, phases[index]);
+      const priorFleetHours = index > 0 && totalUnits(previous) > 0
+        ? minimumHoursForFleet(previous, phases[index])
+        : null;
+      return {
+        phaseIndex: index,
+        startYear: years[index],
+        duration: normalisePhase(phases[index]).duration,
+        counts,
+        purchases,
+        allocation,
+        priorFleetHours
+      };
+    });
+    return { ...plan, phasePlans };
+  }
+
+  function buildCandidate(finalCounts, phases) {
+    const path = pathForFinalFleet(finalCounts, phases);
+    if (!path) return null;
+    const allocations = path.path.map((counts, index) => allocateFleet(counts, phases[index]));
+    const averageUtilization = allocations.reduce((sum, item) => sum + item.utilization, 0) / allocations.length;
+    return enrichPlan({
+      finalFleet: finalCounts,
+      finalUnits: totalUnits(finalCounts),
+      distinctModels: modelCount(finalCounts),
+      machineYears: path.machineYears,
+      purchaseEvents: path.purchaseEvents,
+      path: path.path,
+      averageUtilization,
+      signature: signature(finalCounts)
+    }, phases);
+  }
+
+  function optimisePlan(rawPhases, options) {
+    const phases = rawPhases.map(normalisePhase);
+    const initialMaxUnits = Math.max(1, Number(options && options.maxUnits) || 12);
+    const absoluteMaxUnits = Math.max(initialMaxUnits, Number(options && options.absoluteMaxUnits) || 30);
+    let candidates = [];
+    let foundAt = null;
+
+    for (let total = 1; total <= absoluteMaxUnits; total += 1) {
+      const combinations = generateCompositions(total, MACHINE_ORDER.length);
+      for (const values of combinations) {
+        const counts = arrayToCounts(values);
+        const feasibleAll = phases.every((phase) => allocateFleet(counts, phase).feasible);
+        if (!feasibleAll) continue;
+        const candidate = buildCandidate(counts, phases);
+        if (candidate) candidates.push(candidate);
+      }
+      if (candidates.length > 0) {
+        foundAt = total;
+        break;
+      }
+      if (total >= initialMaxUnits && total >= absoluteMaxUnits) break;
+    }
+
+    if (candidates.length === 0) {
+      return {
+        feasible: false,
+        phases,
+        message: `No feasible fleet found up to ${absoluteMaxUnits} units.`
+      };
+    }
+
+    candidates.sort(comparePlans);
+    const recommended = candidates[0];
+    return {
+      feasible: true,
+      phases,
+      minimumFinalUnits: foundAt,
+      recommended,
+      alternatives: candidates.slice(1, 5),
+      candidateCount: candidates.length,
+      ranking: [
+        "Minimum number of installed units at the end of the plan",
+        "Minimum machine-years over the five phases",
+        "Minimum number of different machine models",
+        "Greater capacity headroom when the previous criteria are tied"
+      ]
+    };
+  }
+
+  function countsLabel(counts, emptyLabel) {
+    const parts = MACHINE_ORDER
+      .filter((code) => (counts[code] || 0) > 0)
+      .map((code) => `${counts[code]} × ${code}`);
+    return parts.length ? parts.join(" + ") : (emptyLabel || "No units");
+  }
+
+  function allocationsLabel(allocation) {
+    const parts = [];
+    MACHINE_ORDER.forEach((code) => {
+      const count = allocation.counts[code] || 0;
+      if (!count) return;
+      const item = allocation.allocations[code];
+      const individualPercent = item.individual / count * 100;
+      const collectivePercent = item.collective / count * 100;
+      parts.push(`${code}: ${individualPercent.toFixed(0)}% I / ${collectivePercent.toFixed(0)}% C`);
+    });
+    return parts.join(" · ");
+  }
+
+  return {
+    MACHINE_ORDER,
+    MACHINE_DATA,
+    DEFAULT_PHASES,
+    normalisePhase,
+    phaseMetrics,
+    allocateFleet,
+    optimisePlan,
+    minimumHoursForFleet,
+    countsLabel,
+    allocationsLabel,
+    totalUnits,
+    emptyCounts
+  };
+});
+
+  </script>
+  <script>
+(function () {
+  "use strict";
+
+  const engine = window.PETOptimizer;
+  if (!engine) throw new Error("PET sizing engine is unavailable.");
+
+  const COLORS = {
+    FT110: "#244f75",
+    FT150: "#4689bd",
+    FT125: "#2f8a73",
+    FT70: "#e5a62d",
+    FT40: "#8998a5"
+  };
+
+  const INPUT_ROWS = [
+    {
+      key: "duration",
+      label: "Phase duration",
+      unit: "years",
+      min: 1,
+      max: 50,
+      step: 1,
+      help: "Number of calendar years covered by the phase. Demand remains an annual value."
+    },
+    {
+      key: "individualShare",
+      label: "Individual / collective ratio",
+      unit: "% individual",
+      min: 0,
+      max: 100,
+      step: 0.1,
+      help: "Client demand split. Collective share is calculated as 100% minus this value."
+    },
+    {
+      key: "volume",
+      label: "Annual volume",
+      unit: "pets/year",
+      min: 0,
+      max: 1000000,
+      step: 1,
+      help: "Total annual cremation demand throughout the phase."
+    },
+    {
+      key: "individualDemand",
+      label: "Individual annual volume",
+      unit: "pets/year",
+      computed: true,
+      help: "Annual volume multiplied by the individual share."
+    },
+    {
+      key: "collectiveDemand",
+      label: "Collective annual volume",
+      unit: "pets/year",
+      computed: true,
+      help: "Annual volume minus individual annual volume."
+    },
+    {
+      key: "hours",
+      label: "Hours per day",
+      unit: "hours/day",
+      min: 0.1,
+      max: 24,
+      step: 0.1,
+      help: "Planned daily operating time for this phase."
+    },
+    {
+      key: "days",
+      label: "Days per year",
+      unit: "days/year",
+      min: 1,
+      max: 366,
+      step: 1,
+      help: "Planned annual operating days."
+    },
+    {
+      key: "availability",
+      label: "Availability",
+      unit: "%",
+      min: 1,
+      max: 100,
+      step: 0.1,
+      help: "Effective machine availability after planned and unplanned downtime."
+    },
+    {
+      key: "weight",
+      label: "Average pet weight",
+      unit: "kg/pet",
+      min: 0.1,
+      max: 500,
+      step: 0.1,
+      help: "Used to convert collective kg/h into pets/h."
+    },
+    {
+      key: "largeShare",
+      label: "Very large pets share — FT125 only",
+      unit: "% of individual",
+      min: 0,
+      max: 100,
+      step: 0.1,
+      help: "Client-defined share of individual demand that may be processed in an FT125. It is not applied to other machines."
+    }
+  ];
+
+  const state = {
+    phases: engine.DEFAULT_PHASES.map((phase) => ({ ...phase })),
+    focus: "global",
+    plan: null
+  };
+
+  const elements = {
+    inputRows: document.getElementById("inputRows"),
+    focusPhase: document.getElementById("focusPhase"),
+    recommendationHeading: document.getElementById("recommendationHeading"),
+    recommendationKpis: document.getElementById("recommendationKpis"),
+    decisionCallout: document.getElementById("decisionCallout"),
+    operatingNote: document.getElementById("operatingNote"),
+    operatingNoteBody: document.getElementById("operatingNoteBody"),
+    planSummary: document.getElementById("planSummary"),
+    horizonSummary: document.getElementById("horizonSummary"),
+    phaseCards: document.getElementById("phaseCards"),
+    chartLegend: document.getElementById("chartLegend"),
+    fleetChart: document.getElementById("fleetChart"),
+    rationaleTitle: document.getElementById("rationaleTitle"),
+    rationaleBody: document.getElementById("rationaleBody"),
+    resultsBody: document.getElementById("resultsBody"),
+    alternativeList: document.getElementById("alternativeList"),
+    resetInputs: document.getElementById("resetInputs"),
+    downloadCsv: document.getElementById("downloadCsv")
+  };
+
+  const numberFormatter = new Intl.NumberFormat("en-GB", { maximumFractionDigits: 0 });
+  const decimalFormatter = new Intl.NumberFormat("en-GB", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+  function formatNumber(value) {
+    return numberFormatter.format(Math.round(value));
+  }
+
+  function formatPercent(value) {
+    return `${decimalFormatter.format(value * 100)}%`;
+  }
+
+  function plural(value, singular, pluralForm) {
+    return Number(value) === 1 ? singular : (pluralForm || `${singular}s`);
+  }
+
+  function sumCounts(counts) {
+    return engine.totalUnits(counts);
+  }
+
+  function buildInputTable() {
+    elements.inputRows.innerHTML = INPUT_ROWS.map((row) => {
+      const labelClass = row.key === "largeShare" ? "field-label ft125-only" : "field-label";
+      const cells = state.phases.map((phase, index) => {
+        if (row.computed) {
+          return `<td class="calculated-cell" data-computed="${row.key}" data-phase="${index}">—</td>`;
+        }
+        return `<td><input type="number" inputmode="decimal" aria-label="${row.label}, Phase ${index + 1}" data-key="${row.key}" data-phase="${index}" min="${row.min}" max="${row.max}" step="${row.step}" value="${phase[row.key]}"></td>`;
+      }).join("");
+      return `<tr>
+        <th scope="row"><span class="${labelClass}">${row.label}<span class="help-dot" title="${row.help}" aria-label="${row.help}">i</span></span></th>
+        ${cells}
+        <td class="unit-cell">${row.unit}</td>
+      </tr>`;
+    }).join("");
+
+    elements.inputRows.querySelectorAll("input").forEach((input) => {
+      input.addEventListener("input", handleInput);
+      input.addEventListener("change", normaliseInput);
+    });
+  }
+
+  let renderTimer = null;
+  function handleInput(event) {
+    const input = event.currentTarget;
+    const phaseIndex = Number(input.dataset.phase);
+    const key = input.dataset.key;
+    const value = Number(input.value);
+    if (Number.isFinite(value)) state.phases[phaseIndex][key] = value;
+    window.clearTimeout(renderTimer);
+    renderTimer = window.setTimeout(render, 90);
+  }
+
+  function normaliseInput(event) {
+    const input = event.currentTarget;
+    const phaseIndex = Number(input.dataset.phase);
+    const key = input.dataset.key;
+    const clean = engine.normalisePhase(state.phases[phaseIndex]);
+    state.phases[phaseIndex] = clean;
+    input.value = clean[key];
+    render();
+  }
+
+  function updateComputedRows() {
+    state.phases.forEach((phase, index) => {
+      const metrics = engine.phaseMetrics(phase);
+      const individualCell = elements.inputRows.querySelector(`[data-computed="individualDemand"][data-phase="${index}"]`);
+      const collectiveCell = elements.inputRows.querySelector(`[data-computed="collectiveDemand"][data-phase="${index}"]`);
+      individualCell.textContent = formatNumber(metrics.individualDemand);
+      collectiveCell.textContent = formatNumber(metrics.collectiveDemand);
+    });
+  }
+
+  function startYears() {
+    let year = 1;
+    return state.phases.map((phase) => {
+      const start = year;
+      year += engine.normalisePhase(phase).duration;
+      return start;
+    });
+  }
+
+  function periodLabel(index) {
+    const starts = startYears();
+    const duration = engine.normalisePhase(state.phases[index]).duration;
+    const start = starts[index];
+    return duration === 1 ? `Year ${start}` : `Years ${start}–${start + duration - 1}`;
+  }
+
+  function purchaseLabel(purchases, year, short) {
+    if (sumCounts(purchases) === 0) return short ? "No purchase" : "No additional unit";
+    const action = engine.countsLabel(purchases);
+    return short ? `+ ${action} in Y${year}` : `Buy ${action} at start of Year ${year}`;
+  }
+
+  function kpi(label, value, note, className) {
+    return `<div class="kpi ${className || ""}">
+      <div class="label">${label}</div>
+      <div class="value">${value}</div>
+      <div class="note">${note}</div>
+    </div>`;
+  }
+
+  function renderRecommendation(plan) {
+    const recommended = plan.recommended;
+    if (state.focus === "global") {
+      const horizonYears = state.phases.reduce((sum, phase) => sum + engine.normalisePhase(phase).duration, 0);
+      const totalCremations = state.phases.reduce((sum, phase) => {
+        const clean = engine.normalisePhase(phase);
+        return sum + clean.volume * clean.duration;
+      }, 0);
+      const purchasePhases = recommended.phasePlans.filter((item) => sumCounts(item.purchases) > 0);
+      const first = purchasePhases[0];
+      elements.recommendationHeading.innerHTML = `<p class="eyebrow">Global recommendation</p><h2>${engine.countsLabel(recommended.finalFleet)}</h2><p>Minimum-unit fleet required at the end of the five-phase plan.</p>`;
+      elements.recommendationKpis.innerHTML = [
+        kpi("Final installed fleet", engine.countsLabel(recommended.finalFleet), "Retained through later phases", "accent"),
+        kpi("Final unit count", recommended.finalUnits, "Primary ranking criterion", "good"),
+        kpi("Purchase stages", purchasePhases.length, `${plural(purchasePhases.length, "investment stage")}`),
+        kpi("Planning horizon", `${horizonYears} ${plural(horizonYears, "year")}`, `${formatNumber(totalCremations)} planned cremations`)
+      ].join("");
+      elements.decisionCallout.innerHTML = `<strong>Start with ${engine.countsLabel(first.counts)} in Year ${first.startYear}.</strong> The plan evaluates all five phases together, so it avoids buying a smaller machine first when that would increase the final number of installed units.`;
+      renderGlobalOperatingNote(recommended);
+    } else {
+      const phaseIndex = Number(state.focus);
+      const item = recommended.phasePlans[phaseIndex];
+      const allocation = item.allocation;
+      const purchase = purchaseLabel(item.purchases, item.startYear, false);
+      elements.recommendationHeading.innerHTML = `<p class="eyebrow">Phase ${phaseIndex + 1} focus</p><h2>${periodLabel(phaseIndex)} · ${engine.countsLabel(item.counts)}</h2><p>${formatNumber(allocation.metrics.volume)} pets/year · ${decimalFormatter.format(allocation.metrics.individualShare)}% individual.</p>`;
+      elements.recommendationKpis.innerHTML = [
+        kpi("Fleet utilisation", formatPercent(allocation.utilization), "Across installed units", allocation.utilization > .9 ? "" : "good"),
+        kpi("Installed fleet", engine.countsLabel(item.counts), "Retains earlier purchases", "accent"),
+        kpi("Purchase action", sumCounts(item.purchases) ? engine.countsLabel(item.purchases) : "None", purchaseLabel(item.purchases, item.startYear, true)),
+        kpi("Spare capacity", formatPercent(allocation.spareCapacity), "Across installed units", "good")
+      ].join("");
+      elements.decisionCallout.innerHTML = `<strong>${purchase}.</strong> Operating allocation: ${engine.allocationsLabel(allocation)}.`;
+      renderPhaseOperatingNote(item, phaseIndex);
+    }
+  }
+
+  function renderGlobalOperatingNote(recommended) {
+    const alternatives = recommended.phasePlans.filter((item, index) => {
+      if (index === 0 || sumCounts(item.purchases) === 0 || item.priorFleetHours === null) return false;
+      return item.priorFleetHours > state.phases[index].hours + 0.01 && item.priorFleetHours <= 24;
+    });
+    elements.operatingNote.open = false;
+    if (!alternatives.length) {
+      elements.operatingNoteBody.textContent = "No phase currently has a practical hours-only alternative to a planned purchase.";
+      return;
+    }
+    elements.operatingNoteBody.innerHTML = alternatives.map((item) => {
+      return `<div><strong>Phase ${item.phaseIndex + 1}:</strong> retain the previous fleet by operating approximately ${decimalFormatter.format(item.priorFleetHours)} h/day, subject to operational validation.</div>`;
+    }).join("");
+  }
+
+  function renderPhaseOperatingNote(item, phaseIndex) {
+    elements.operatingNote.open = false;
+    if (sumCounts(item.purchases) === 0) {
+      elements.operatingNoteBody.textContent = "No additional purchase is required in this phase.";
+      return;
+    }
+    if (phaseIndex === 0) {
+      elements.operatingNoteBody.textContent = "An opening-time alternative is not applicable before the initial fleet is installed.";
+      return;
+    }
+    if (item.priorFleetHours === null || item.priorFleetHours > 24) {
+      elements.operatingNoteBody.textContent = "The previous fleet cannot cover this phase within a 24-hour operating day.";
+      return;
+    }
+    elements.operatingNoteBody.innerHTML = `Instead of the planned purchase, retain the previous fleet and operate approximately <strong>${decimalFormatter.format(item.priorFleetHours)} h/day</strong>. This option remains subject to staffing and operating constraints.`;
+  }
+
+  function renderPhaseCards(recommended) {
+    elements.phaseCards.innerHTML = recommended.phasePlans.map((item, index) => {
+      const active = state.focus === String(index) ? "active" : "";
+      return `<button type="button" class="phase-card ${active}" data-focus="${index}">
+        <strong>Phase ${index + 1}</strong>
+        <span>${periodLabel(index)} · ${item.duration} ${plural(item.duration, "year")}</span>
+        <span class="purchase">${purchaseLabel(item.purchases, item.startYear, true)}</span>
+        <span>${engine.countsLabel(item.counts)} installed</span>
+      </button>`;
+    }).join("");
+    elements.phaseCards.querySelectorAll("button").forEach((button) => {
+      button.addEventListener("click", () => {
+        state.focus = button.dataset.focus;
+        elements.focusPhase.value = state.focus;
+        render();
+        document.querySelector(".recommendation-panel").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  }
+
+  function renderChart(recommended) {
+    const plans = recommended.phasePlans;
+    const width = 1100;
+    const height = 340;
+    const margin = { top: 36, right: 68, bottom: 54, left: 58 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+    const maxUnits = Math.max(1, ...plans.map((item) => sumCounts(item.counts)));
+    const yMax = Math.max(2, maxUnits);
+    const band = plotWidth / plans.length;
+    const barWidth = Math.min(86, band * .42);
+    const xAt = (index) => margin.left + band * index + band / 2;
+    const yUnit = (value) => margin.top + plotHeight - (value / yMax) * plotHeight;
+    const yUtil = (value) => margin.top + plotHeight - Math.min(1, value) * plotHeight;
+
+    let svg = `<title>Recommended installed fleet and utilisation by phase</title>`;
+    for (let tick = 0; tick <= yMax; tick += 1) {
+      const y = yUnit(tick);
+      svg += `<line class="chart-grid" x1="${margin.left}" y1="${y}" x2="${width - margin.right}" y2="${y}"></line>`;
+      svg += `<text class="chart-axis" x="${margin.left - 12}" y="${y + 4}" text-anchor="end">${tick}</text>`;
+    }
+    [0, 25, 50, 75, 100].forEach((tick) => {
+      const y = yUtil(tick / 100);
+      svg += `<text class="chart-axis" x="${width - margin.right + 12}" y="${y + 4}" text-anchor="start">${tick}%</text>`;
+    });
+    svg += `<text class="chart-axis" x="${margin.left}" y="18">Installed units</text>`;
+    svg += `<text class="chart-axis" x="${width - margin.right}" y="18" text-anchor="end">Fleet utilisation</text>`;
+
+    plans.forEach((item, index) => {
+      let stack = 0;
+      engine.MACHINE_ORDER.slice().reverse().forEach((code) => {
+        const value = item.counts[code] || 0;
+        if (!value) return;
+        const yTop = yUnit(stack + value);
+        const yBottom = yUnit(stack);
+        svg += `<rect x="${xAt(index) - barWidth / 2}" y="${yTop}" width="${barWidth}" height="${Math.max(0, yBottom - yTop)}" rx="3" fill="${COLORS[code]}"><title>${code}: ${value}</title></rect>`;
+        stack += value;
+      });
+      svg += `<text class="chart-value" x="${xAt(index)}" y="${yUnit(stack) - 9}" text-anchor="middle">${stack}</text>`;
+      svg += `<text class="chart-axis" x="${xAt(index)}" y="${height - 29}" text-anchor="middle">Phase ${index + 1}</text>`;
+      svg += `<text class="chart-axis" x="${xAt(index)}" y="${height - 12}" text-anchor="middle">Y${item.startYear}</text>`;
+    });
+
+    const linePoints = plans.map((item, index) => `${xAt(index)},${yUtil(item.allocation.utilization)}`).join(" ");
+    svg += `<polyline class="util-line" points="${linePoints}"></polyline>`;
+    plans.forEach((item, index) => {
+      const x = xAt(index);
+      const y = yUtil(item.allocation.utilization);
+      svg += `<circle class="util-point" cx="${x}" cy="${y}" r="6"><title>Phase ${index + 1}: ${formatPercent(item.allocation.utilization)}</title></circle>`;
+      svg += `<text class="chart-value" x="${x}" y="${y - 12}" text-anchor="middle">${formatPercent(item.allocation.utilization)}</text>`;
+    });
+    elements.fleetChart.innerHTML = svg;
+
+    elements.chartLegend.innerHTML = engine.MACHINE_ORDER.map((code) => {
+      return `<span class="legend-item"><span class="legend-swatch" style="background:${COLORS[code]}"></span>${code}</span>`;
+    }).join("") + `<span class="legend-item"><span class="legend-swatch" style="height:3px;background:#ad4646"></span>Utilisation</span>`;
+  }
+
+  function renderResults(recommended) {
+    elements.resultsBody.innerHTML = recommended.phasePlans.map((item, index) => {
+      const metrics = item.allocation.metrics;
+      const hasPurchase = sumCounts(item.purchases) > 0;
+      const optionalHours = index > 0 && hasPurchase && item.priorFleetHours !== null && item.priorFleetHours <= 24
+        ? `${decimalFormatter.format(item.priorFleetHours)} h/day`
+        : "—";
+      const focusClass = state.focus === String(index) ? "focus-row" : "";
+      return `<tr class="${focusClass}">
+        <th scope="row">Phase ${index + 1}</th>
+        <td>${periodLabel(index)}</td>
+        <td>${formatNumber(metrics.individualDemand)}</td>
+        <td>${formatNumber(metrics.collectiveDemand)}</td>
+        <td class="text-cell"><strong>${engine.countsLabel(item.counts)}</strong></td>
+        <td class="text-cell">${purchaseLabel(item.purchases, item.startYear, false)}</td>
+        <td class="text-cell allocation-cell">${engine.allocationsLabel(item.allocation)}</td>
+        <td><strong>${formatPercent(item.allocation.utilization)}</strong></td>
+        <td>${optionalHours}</td>
+        <td><span class="status-badge ${hasPurchase ? "buy" : ""}">${hasPurchase ? `Purchase in Y${item.startYear}` : "Fleet sufficient"}</span></td>
+      </tr>`;
+    }).join("");
+  }
+
+  function renderRationale(plan) {
+    const recommended = plan.recommended;
+    const phase1 = recommended.phasePlans[0];
+    const final = recommended.phasePlans[recommended.phasePlans.length - 1];
+    const purchasePhases = recommended.phasePlans.filter((item) => sumCounts(item.purchases) > 0);
+    const startsWithFinalFleet = engine.countsLabel(phase1.counts) === engine.countsLabel(final.counts);
+    elements.rationaleTitle.textContent = startsWithFinalFleet
+      ? "The long-term fleet is installed from the start"
+      : "Purchases are staged without discarding earlier machines";
+    elements.rationaleBody.innerHTML = `<p>The engine replaces the manual 100/0, 80/20 and similar trials. It assigns individual and collective operating time to every installed machine, then tests mixed fleets across all five phases.</p>
+      <ul>
+        <li><strong>${recommended.finalUnits} ${plural(recommended.finalUnits, "unit")}</strong> in the final fleet.</li>
+        <li><strong>${purchasePhases.length} ${plural(purchasePhases.length, "purchase stage")}</strong> over the plan.</li>
+        <li><strong>${formatPercent(final.allocation.utilization)}</strong> fleet utilisation in Phase 5.</li>
+        <li>Machines remain installed in later phases.</li>
+      </ul>`;
+  }
+
+  function renderAlternatives(plan) {
+    const alternatives = plan.alternatives.filter((item) => item.finalUnits === plan.minimumFinalUnits);
+    if (!alternatives.length) {
+      elements.alternativeList.innerHTML = `<div class="empty-alternatives">No other fleet reaches the same minimum unit count with the current inputs.</div>`;
+      return;
+    }
+    elements.alternativeList.innerHTML = alternatives.map((item) => {
+      const finalPhase = item.phasePlans[item.phasePlans.length - 1];
+      return `<div class="alternative-card">
+        <strong>${engine.countsLabel(item.finalFleet)}</strong>
+        <span>${item.machineYears} machine-years · ${formatPercent(finalPhase.allocation.utilization)} utilisation in Phase 5</span>
+      </div>`;
+    }).join("");
+  }
+
+  function renderPlanHeader(recommended) {
+    const years = state.phases.reduce((sum, phase) => sum + engine.normalisePhase(phase).duration, 0);
+    const total = state.phases.reduce((sum, phase) => {
+      const clean = engine.normalisePhase(phase);
+      return sum + clean.volume * clean.duration;
+    }, 0);
+    elements.planSummary.textContent = `${engine.countsLabel(recommended.finalFleet)} at maturity, with purchases timed from the complete business plan.`;
+    elements.horizonSummary.textContent = `${years}-year horizon · ${formatNumber(total)} planned cremations`;
+  }
+
+  function renderError(message) {
+    elements.recommendationHeading.innerHTML = `<p class="eyebrow">Recommendation unavailable</p><h2>Review the assumptions</h2><p>${message}</p>`;
+    elements.recommendationKpis.innerHTML = "";
+    elements.decisionCallout.textContent = "No fleet could be sized within the current calculation limit.";
+    elements.operatingNoteBody.textContent = "";
+    elements.phaseCards.innerHTML = "";
+    elements.fleetChart.innerHTML = "";
+    elements.resultsBody.innerHTML = "";
+    elements.alternativeList.innerHTML = "";
+  }
+
+  function render() {
+    updateComputedRows();
+    const plan = engine.optimisePlan(state.phases, { maxUnits: 12, absoluteMaxUnits: 30 });
+    state.plan = plan;
+    if (!plan.feasible) {
+      renderError(plan.message);
+      return;
+    }
+    renderRecommendation(plan);
+    renderPlanHeader(plan.recommended);
+    renderPhaseCards(plan.recommended);
+    renderChart(plan.recommended);
+    renderResults(plan.recommended);
+    renderRationale(plan);
+    renderAlternatives(plan);
+  }
+
+  function resetInputs() {
+    state.phases = engine.DEFAULT_PHASES.map((phase) => ({ ...phase }));
+    state.focus = "global";
+    elements.focusPhase.value = "global";
+    buildInputTable();
+    render();
+  }
+
+  function csvEscape(value) {
+    const text = String(value ?? "");
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+
+  function downloadPlan() {
+    if (!state.plan || !state.plan.feasible) return;
+    const rows = [[
+      "Phase", "Period", "Annual volume", "Individual/year", "Collective/year",
+      "Installed fleet", "Purchase", "Operating allocation", "Fleet utilisation", "Optional prior-fleet h/day"
+    ]];
+    state.plan.recommended.phasePlans.forEach((item, index) => {
+      const metrics = item.allocation.metrics;
+      rows.push([
+        `Phase ${index + 1}`,
+        periodLabel(index),
+        metrics.volume,
+        Math.round(metrics.individualDemand),
+        Math.round(metrics.collectiveDemand),
+        engine.countsLabel(item.counts),
+        purchaseLabel(item.purchases, item.startYear, false),
+        engine.allocationsLabel(item.allocation),
+        formatPercent(item.allocation.utilization),
+        item.priorFleetHours === null ? "" : decimalFormatter.format(item.priorFleetHours)
+      ]);
+    });
+    const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "PET_Sizing_Tool_Recommended_Plan.csv";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function registerWebTools() {
+    if (!navigator.modelContext || typeof navigator.modelContext.registerTool !== "function") return;
+    navigator.modelContext.registerTool({
+      name: "update_phase_inputs",
+      description: "Update one phase of the PET fleet business plan and recalculate the recommended mixed fleet.",
+      inputSchema: {
+        type: "object",
+        properties: {
+          phase: { type: "integer", minimum: 1, maximum: 5 },
+          duration: { type: "number" },
+          volume: { type: "number" },
+          individualShare: { type: "number" },
+          hours: { type: "number" },
+          days: { type: "number" },
+          availability: { type: "number" },
+          weight: { type: "number" },
+          largeShare: { type: "number" }
+        },
+        required: ["phase"]
+      },
+      execute: async (input) => {
+        const index = Number(input.phase) - 1;
+        Object.keys(state.phases[index]).forEach((key) => {
+          if (input[key] !== undefined) state.phases[index][key] = Number(input[key]);
+        });
+        state.phases[index] = engine.normalisePhase(state.phases[index]);
+        buildInputTable();
+        render();
+        return { recommendedFleet: engine.countsLabel(state.plan.recommended.finalFleet) };
+      }
+    });
+    navigator.modelContext.registerTool({
+      name: "get_recommended_fleet_plan",
+      description: "Return the current recommended minimum-unit PET cremator fleet and its purchase timeline.",
+      inputSchema: { type: "object", properties: {} },
+      execute: async () => ({
+        finalFleet: engine.countsLabel(state.plan.recommended.finalFleet),
+        finalUnits: state.plan.recommended.finalUnits,
+        phases: state.plan.recommended.phasePlans.map((item, index) => ({
+          phase: index + 1,
+          fleet: engine.countsLabel(item.counts),
+          purchase: purchaseLabel(item.purchases, item.startYear, false),
+          utilization: formatPercent(item.allocation.utilization)
+        }))
+      })
+    });
+  }
+
+  elements.focusPhase.addEventListener("change", () => {
+    state.focus = elements.focusPhase.value;
+    render();
+  });
+  elements.resetInputs.addEventListener("click", resetInputs);
+  elements.downloadCsv.addEventListener("click", downloadPlan);
+
+  buildInputTable();
+  render();
+  registerWebTools();
+})();
+
+  </script>
+</body>
+</html>
